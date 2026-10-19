@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?
+  name          String?
+  upiId         String?
+  createdAt     DateTime       @default(now())
+  firebaseUid   String?        @unique
+  phoneNumber   String?
+  expensesPaid  Expense[]
+  splits        ExpenseSplit[]
+  createdGroups Group[]
+  groups        GroupMember[]
+  uploadedMedia        Media[]        @relation("UploadedMedia")
+  notificationsEnabled Boolean        @default(true)
+  fcmTokens            FcmToken[]
+}
+
+model Group {
+  id                   String        @id @default(uuid())
+  title                String
+  inviteLink           String        @unique
+  createdBy            String
+  currency             String
+  createdAt            DateTime      @default(now())
+  simplifyDebts        Boolean       @default(false)
+  inviteLinkStatus     String        @default("ACTIVE")
+  preAddedParticipants Json          @default("[]")
+  pendingParticipantPhoneSuffixes String[] @default([])
+  destination          String        @default("")
+  startDate            DateTime      @default(now())
+  endDate              DateTime      @default(now())
+  tripType             String        @default("Other")
+  coverImage           String?
+  photoPath            String?
+  photoUrl             String?
+  expenses             Expense[]
+  creator              User          @relation(fields: [createdBy], references: [id])
+  members              GroupMember[]
+  media                Media[]
+  settlements          Settlement[]
+  transactions         Transaction[]
+
+  @@index([pendingParticipantPhoneSuffixes], type: Gin)
+}
+
+model GroupMember {
+  id       String   @id @default(uuid())
+  userId   String
+  groupId  String
+  joinedAt DateTime @default(now())
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model Expense {
+  id        String         @id @default(uuid())
+  title     String
+  amount    Float
+  currency  String         @default("USD")
+  groupId   String
+  paidBy    String
+  date      DateTime       @default(now())
+  notes     String?
+  splitType String         @default("EQUAL")
+  createdAt DateTime       @default(now())
+  group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  payer     User           @relation(fields: [paidBy], references: [id])
+  splits    ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id        String  @id @default(uuid())
+  expenseId String
+  userId    String
+  amount    Float
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+model Settlement {
+  id         String    @id @default(uuid())
+  fromUserId String
+  toUserId   String
+  groupId    String
+  amount     Float
+  currency   String    @default("USD")
+  isPaid     Boolean   @default(false)
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  group      Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  type       String
+  groupId    String
+  fromUserId String?
+  toUserId   String?
+  amount     Float
+  currency   String   @default("USD")
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Media {
+  id         String   @id @default(uuid())
+  groupId    String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+  fileName   String
+  filePath   String
+  fileUrl    String
+  mediaType  String
+  mimeType   String
+  sizeBytes  Int
+  title      String?
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  uploader   User     @relation("UploadedMedia", fields: [uploadedBy], references: [id])
+
+  @@index([groupId, mediaType, createdAt])
+}
+
+model FcmToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

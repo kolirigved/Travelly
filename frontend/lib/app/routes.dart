@@ -1,0 +1,182 @@
+// =============================================================================
+// App Routes — Centralized route definitions using named routes.
+//
+// All screen routes are registered here. Uses MaterialPageRoute for
+// transition animations. Named routes enable type-safe navigation.
+// =============================================================================
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import '../core/constants/route_constants.dart';
+
+// Auth screens
+import '../features/intro/presentation/screens/launch_screen.dart';
+import '../features/intro/presentation/screens/sign_in_screen.dart';
+import '../features/intro/presentation/screens/register_screen.dart';
+import '../features/intro/presentation/screens/otp_screen.dart';
+import '../features/intro/presentation/screens/google_sign_in_screen.dart';
+import '../features/intro/presentation/screens/forgot_password_screen.dart';
+import '../features/intro/presentation/screens/provide_phone_screen.dart';
+
+// Trip screens
+import '../features/trips/presentation/screens/my_trips_screen.dart';
+import '../features/trips/presentation/screens/join_trip_screen.dart';
+
+import '../features/dashboard/presentation/screens/main_screen.dart';
+
+// Settings screens
+import '../features/account_settings/presentation/screens/account_settings_screen.dart';
+import '../features/trip_settings/presentation/screens/trip_settings_screen.dart';
+import '../features/account_settings/presentation/screens/personal_info_screen.dart';
+import '../features/account_settings/presentation/screens/change_password_screen.dart';
+import '../features/trip_settings/presentation/screens/manage_members_screen.dart';
+
+// Feature screens
+import '../features/payments/presentation/screens/payments_screen.dart';
+import '../features/gallery/presentation/screens/gallery_screen.dart';
+import '../features/documents/presentation/screens/documents_screen.dart';
+import '../features/plan/presentation/screens/plan_screen.dart';
+
+class AppRoutes {
+  // Prevent instantiation
+  AppRoutes._();
+
+  /// Generates a route based on the route name.
+  ///
+  /// Usage in MaterialApp:
+  /// ```dart
+  /// MaterialApp(
+  ///   onGenerateRoute: AppRoutes.generateRoute,
+  ///   initialRoute: RouteConstants.launch,
+  /// )
+  /// ```
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      // Auth Flow
+      case RouteConstants.launch:
+        return _buildRoute(const LaunchScreen(), settings);
+
+      case RouteConstants.login:
+        return _buildRoute(const SignInScreen(), settings);
+
+      case RouteConstants.register:
+        return _buildRoute(const RegisterScreen(), settings);
+
+      case RouteConstants.verifyEmail:
+        return _buildRoute(const OtpScreen(), settings);
+
+      case RouteConstants.googleSignIn:
+        return _buildRoute(const GoogleSignInScreen(), settings);
+
+      case RouteConstants.forgotPassword:
+        return _buildRoute(const ForgotPasswordScreen(), settings);
+
+      case RouteConstants.providePhone:
+        return _buildRoute(const ProvidePhoneScreen(), settings);
+
+      // Trips
+      case RouteConstants.trips:
+        return _buildRoute(const MyTripsScreen(), settings);
+
+      case RouteConstants.joinTrip:
+        return _buildRoute(const JoinTripScreen(), settings);
+
+      // Dashboard (main screen with bottom navigation)
+      case RouteConstants.dashboard:
+        final dashboardArgs = settings.arguments;
+        final dashboardTripId = dashboardArgs is String
+            ? dashboardArgs
+            : dashboardArgs is Map<String, dynamic>
+            ? dashboardArgs['tripId'] as String?
+            : null;
+        return _buildRoute(MainScreen(tripId: dashboardTripId), settings);
+
+      // Settings
+      case RouteConstants.accountSettings:
+        return _buildRoute(const AccountSettingsScreen(), settings);
+
+      case RouteConstants.personalInfo:
+        return _buildRoute(const PersonalInfoScreen(), settings);
+
+      case RouteConstants.changePassword:
+        return _buildRoute(const ChangePasswordScreen(), settings);
+
+      case RouteConstants.tripSettings:
+        final tripSettingsArgs = settings.arguments;
+        final tripSettingsTripId = tripSettingsArgs is String
+            ? tripSettingsArgs
+            : tripSettingsArgs is Map<String, dynamic>
+            ? tripSettingsArgs['tripId'] as String?
+            : null;
+        return _buildRoute(
+          TripSettingsScreen(tripId: tripSettingsTripId),
+          settings,
+        );
+
+
+      case RouteConstants.manageMembers:
+        final args = settings.arguments;
+        final tripId = args is String
+            ? args
+            : args is Map<String, dynamic>
+            ? args['tripId'] as String?
+            : null;
+
+        if (tripId == null || tripId.isEmpty) {
+          return _buildRoute(
+            const Scaffold(
+              body: Center(child: Text('Manage Members requires a tripId.')),
+            ),
+            settings,
+          );
+        }
+
+        return _buildRoute(ManageMembersScreen(tripId: tripId), settings);
+
+      // Features
+      case RouteConstants.payments:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final groupId = args?['groupId'] as String? ?? '';
+        return _buildCupertinoRoute(PaymentsScreen(groupId: groupId), settings);
+
+      case RouteConstants.gallery:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final groupId = args?['groupId'] as String? ?? '';
+        return _buildCupertinoRoute(GalleryScreen(groupId: groupId), settings);
+
+      case RouteConstants.documents:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final groupId = args?['groupId'] as String? ?? '';
+        return _buildCupertinoRoute(
+          DocumentsScreen(groupId: groupId),
+          settings,
+        );
+
+      case RouteConstants.plan:
+        return _buildCupertinoRoute(const PlanScreen(), settings);
+
+      // Default — 404
+      default:
+        return _buildRoute(
+          Scaffold(
+            body: Center(child: Text('Route not found: ${settings.name}')),
+          ),
+          settings,
+        );
+    }
+  }
+
+  /// Builds a MaterialPageRoute with the given widget and settings.
+  static MaterialPageRoute _buildRoute(Widget widget, RouteSettings settings) {
+    return MaterialPageRoute(builder: (_) => widget, settings: settings);
+  }
+
+  /// Builds a CupertinoPageRoute to provide native iOS swipe-back
+  /// and right-to-left slide transition on all platforms.
+  static CupertinoPageRoute _buildCupertinoRoute(
+    Widget widget,
+    RouteSettings settings,
+  ) {
+    return CupertinoPageRoute(builder: (_) => widget, settings: settings);
+  }
+}

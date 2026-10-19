@@ -1,9 +1,0 @@
-[submodule "frontend"]
-	path = frontend
-	url = https://github.com/CS253/frontend
-[submodule "backend"]
-	path = backend
-	url = https://github.com/CS253/Backend
-[submodule "documents"]
-	path = documents
-	url = https://github.com/CS253/Documents
